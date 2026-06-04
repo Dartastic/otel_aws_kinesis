@@ -2,7 +2,6 @@
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_aws_kinesis_suppression.dart';
 
@@ -52,51 +51,66 @@ Future<T> tracedAwsKinesis<T>({
   final t = tracer ?? OTel.tracerProvider().getTracer('otel_aws_kinesis');
   final span = t.startSpan('kinesis $operation', kind: SpanKind.producer);
   try {
-    span.setStringAttribute('messaging.system', 'aws_kinesis');
+    span.addAttributes(OTel.attributes(
+        [OTel.attributeString('messaging.system', 'aws_kinesis')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.streamName != null) {
-        span.setStringAttribute('messaging.destination.name', res.streamName!);
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString('messaging.destination.name', res.streamName!)
+        ]));
       }
       if (res.streamArn != null) {
-        span.setStringAttribute('aws.kinesis.stream.arn', res.streamArn!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('aws.kinesis.stream.arn', res.streamArn!)]));
       }
       if (res.shardId != null) {
-        span.setStringAttribute('aws.kinesis.shard.id', res.shardId!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('aws.kinesis.shard.id', res.shardId!)]));
       }
       if (res.sequenceNumber != null) {
-        span.setStringAttribute(
-          'aws.kinesis.sequence_number',
-          res.sequenceNumber!,
-        );
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString(
+            'aws.kinesis.sequence_number',
+            res.sequenceNumber!,
+          )
+        ]));
       }
       if (res.partitionKey != null) {
-        span.setStringAttribute('messaging.message.id', res.partitionKey!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('messaging.message.id', res.partitionKey!)]));
       }
       if (res.recordCount != null) {
-        span.setIntAttribute('messaging.batch.message_count', res.recordCount!);
+        span.addAttributes(OTel.attributes([
+          OTel.attributeInt('messaging.batch.message_count', res.recordCount!)
+        ]));
       }
       if (res.bytes != null) {
-        span.setIntAttribute('messaging.message.body.size', res.bytes!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('messaging.message.body.size', res.bytes!)]));
       }
       if (res.region != null) {
-        span.setStringAttribute('cloud.region', res.region!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('cloud.region', res.region!)]));
       }
       if (res.statusCode != null) {
-        span.setIntAttribute('http.response.status_code', res.statusCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
       }
       if (res.errorCode != null) {
-        span.setStringAttribute('kinesis.error.code', res.errorCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('kinesis.error.code', res.errorCode!)]));
       }
-      final fail =
-          res.errorCode != null ||
+      final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.setStringAttribute(
-          ErrorResource.errorType.key,
-          res.errorCode ?? 'kinesis.error',
-        );
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString(
+            ErrorResource.errorType.key,
+            res.errorCode ?? 'kinesis.error',
+          )
+        ]));
         span.setStatus(SpanStatusCode.Error, res.errorMessage);
       }
     }
